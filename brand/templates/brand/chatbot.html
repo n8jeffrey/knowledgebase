@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Chatbot{% endblock %}
+{% block content %}
+<h2>Chatbot</h2>
+<div id="conversation">
+    {% for message in conversation %}
+        <p><strong>{{ message.role }}:</strong> {{ message.content }}</p>
+    {% endfor %}
+</div>
+<form id="chat-form" method="post">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="user_input">Ask a question:</label>
+        <input type="text" class="form-control" id="user_input" name="user_input">
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+<script>
+document.getElementById('chat-form').onsubmit = function(event) {
+    event.preventDefault();
+    var user_input = document.getElementById('user_input').value;
+    fetch("{% url 'chatbot' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ user_input: user_input })
+    }).then(response => response.json())
+      .then(data => {
+          var conversationDiv = document.getElementById('conversation');
+          conversationDiv.innerHTML += `<p><strong>User:</strong> ${user_input}</p>`;
+          if (data.answer) {
+              conversationDiv.innerHTML += `<p><strong>AI:</strong> ${data.answer}</p>`;
+          } else if (data.error_message) {
+              conversationDiv.innerHTML += `<p><strong>Error:</strong> ${data.error_message}</p>`;
+          }
+          document.getElementById('user_input').value = '';
+      });
+}
+</script>
+{% endblock %}
